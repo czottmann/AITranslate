@@ -147,7 +147,7 @@ struct AITranslate: AsyncParsableCommand {
       localizationGroup.localizations = localizationEntries
       localizationGroup.localizations?[lang] = LocalizationUnit(
         stringUnit: StringUnit(
-          state: result == nil ? "error" : "translated",
+          state: result == nil ? "error" : "needs_review",
           value: result ?? ""
         )
       )
