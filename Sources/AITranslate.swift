@@ -6,8 +6,8 @@
 //
 
 import ArgumentParser
-import OpenAI
 import Foundation
+import OpenAI
 
 @main
 struct AITranslate: AsyncParsableCommand {
@@ -17,7 +17,7 @@ struct AITranslate: AsyncParsableCommand {
     Your inputs will be a source language, a target language, the original text, and
     optionally some context to help you understand how the original text is used within
     the application. Each piece of information will be inside some XML-like tags.
-    In your response include *only* the translation, and do not include any metadata, tags, 
+    In your response include *only* the translation, and do not include any metadata, tags,
     periods, quotes, or new lines, unless included in the original text.
 
     When translating to German, use the informal "Du" form, and uppercase "Du", "Dich",
@@ -32,36 +32,30 @@ struct AITranslate: AsyncParsableCommand {
       .map { String($0).trimmingCharacters(in: .whitespaces) }
   }
 
-  @Argument(transform: URL.init(fileURLWithPath:))
-  var inputFile: URL
+  @Argument(transform: URL.init(fileURLWithPath:)) var inputFile: URL
 
   @Option(
     name: .shortAndLong,
-    help: ArgumentHelp("A comma separated list of language codes (must match the language codes used by xcstrings)"), 
+    help: ArgumentHelp("A comma separated list of language codes (must match the language codes used by xcstrings)"),
     transform: AITranslate.gatherLanguages(from:)
-  )
-  var languages: [String]
+  ) var languages: [String]
 
   @Option(
     name: .shortAndLong,
     help: ArgumentHelp("Your OpenAI API key, see: https://platform.openai.com/api-keys")
-  )
-  var openAIKey: String
+  ) var openAIKey: String
 
-  @Flag(name: .shortAndLong)
-  var verbose: Bool = false
+  @Flag(name: .shortAndLong) var verbose: Bool = false
 
   @Flag(
     name: .shortAndLong,
     help: ArgumentHelp("By default a backup of the input will be created. When this flag is provided, the backup is skipped.")
-  )
-  var skipBackup: Bool = false
+  ) var skipBackup: Bool = false
 
   @Flag(
     name: .shortAndLong,
     help: ArgumentHelp("Forces all strings to be translated, even if an existing translation is present.")
-  )
-  var force: Bool = false
+  ) var force: Bool = false
 
   lazy var openAI: OpenAI = {
     let configuration = OpenAI.Configuration(
@@ -79,7 +73,7 @@ struct AITranslate: AsyncParsableCommand {
     do {
       let dict = try JSONDecoder().decode(
         StringsDict.self,
-        from: try Data(contentsOf: inputFile)
+        from: Data(contentsOf: inputFile)
       )
 
       let totalNumberOfTranslations = dict.strings.count * languages.count
@@ -113,16 +107,16 @@ struct AITranslate: AsyncParsableCommand {
       let formattedString = formatter.string(from: Date().timeIntervalSince(start))!
 
       print("[✅] 100% \n[⏰] Translations time: \(formattedString)")
-    } catch let error {
+    }
+    catch {
       throw error
     }
   }
 
-  mutating func processEntry(
-    key: String,
-    localizationGroup: LocalizationGroup,
-    sourceLanguage: String
-  ) async throws {
+  mutating func processEntry(key: String,
+                             localizationGroup: LocalizationGroup,
+                             sourceLanguage: String) async throws
+  {
     for lang in languages {
       let localizationEntries = localizationGroup.localizations ?? [:]
       let unit = localizationEntries[lang]
@@ -185,21 +179,20 @@ struct AITranslate: AsyncParsableCommand {
     }
   }
 
-  func performTranslation(
-    _ text: String,
-    from source: String,
-    to target: String,
-    context: String? = nil,
-    openAI: OpenAI
-  ) async throws -> String? {
-
+  func performTranslation(_ text: String,
+                          from source: String,
+                          to target: String,
+                          context: String? = nil,
+                          openAI: OpenAI) async throws -> String?
+  {
     // Skip text that is generally not translated.
     if text.isEmpty ||
-        text.trimmingCharacters(
-          in: .whitespacesAndNewlines
-            .union(.symbols)
-            .union(.controlCharacters)
-        ).isEmpty {
+      text.trimmingCharacters(
+        in: .whitespacesAndNewlines
+          .union(.symbols)
+          .union(.controlCharacters)
+      ).isEmpty
+    {
       return text
     }
 
@@ -214,7 +207,7 @@ struct AITranslate: AsyncParsableCommand {
     let query = ChatQuery(
       messages: [
         .init(role: .system, content: Self.systemPrompt)!,
-        .init(role: .user, content: translationRequest)!
+        .init(role: .user, content: translationRequest)!,
       ],
       model: "gpt-4o-mini"
     )
@@ -228,7 +221,8 @@ struct AITranslate: AsyncParsableCommand {
       }
 
       return translation
-    } catch let error {
+    }
+    catch {
       print("[❌] Failed to translate \(text) into \(target)")
 
       if verbose {
