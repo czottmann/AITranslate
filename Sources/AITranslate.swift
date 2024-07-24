@@ -19,6 +19,12 @@ struct AITranslate: AsyncParsableCommand {
     the application. Each piece of information will be inside some XML-like tags.
     In your response include *only* the translation, and do not include any metadata, tags, 
     periods, quotes, or new lines, unless included in the original text.
+
+    When translating to German, use the informal "Du" form, and uppercase "Du", "Dich",
+    "Dein", etc.
+
+    Leave quotation and special characters like brackets as they are, for example
+    “hello” should be translated to “hallo”, and NOT to „hallo“.
     """
 
   static func gatherLanguages(from input: String) -> [String] {
@@ -210,7 +216,7 @@ struct AITranslate: AsyncParsableCommand {
         .init(role: .system, content: Self.systemPrompt)!,
         .init(role: .user, content: translationRequest)!
       ],
-      model: .gpt4_turbo_preview
+      model: "gpt-4o-mini"
     )
 
     do {
